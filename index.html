@@ -6,28 +6,21 @@
 <title>Gestão Buffet – Além do Bolo</title>
 
 <style>
-:root{
-  --primaria:#0f172a;
-  --destaque:#10b981;
-  --fundo:#f8fafc;
-  --borda:#e2e8f0;
-}
-body{margin:0;font-family:Segoe UI,sans-serif;display:flex;background:var(--fundo)}
-nav{width:300px;background:var(--primaria);color:#fff;height:100vh;position:fixed;padding:18px;overflow:auto}
-nav h2{color:var(--destaque);margin-bottom:10px}
-.btn-menu{width:100%;margin-bottom:6px;padding:10px;background:#1e293b;border:0;color:white;border-radius:6px;text-align:left;cursor:pointer}
-.btn-menu:hover{background:rgba(16,185,129,.15)}
+:root{--p:#0f172a;--d:#10b981;--b:#e2e8f0}
+body{margin:0;font-family:Segoe UI,sans-serif;display:flex;background:#f8fafc}
+nav{width:300px;background:var(--p);color:#fff;height:100vh;position:fixed;padding:16px;overflow:auto}
+nav h2{color:var(--d)}
+.btn-menu{width:100%;padding:9px;margin-bottom:6px;border:0;border-radius:6px;background:#1e293b;color:#fff;cursor:pointer}
+.btn-menu:hover{background:rgba(16,185,129,.2)}
 .label{font-size:.7rem;color:#94a3b8;margin:12px 0 6px}
 main{margin-left:320px;padding:24px;width:100%}
-.card{background:#fff;padding:20px;border-radius:10px;border:1px solid var(--borda);margin-bottom:16px}
+.card{background:#fff;padding:18px;border-radius:10px;border:1px solid var(--b)}
 table{width:100%;border-collapse:collapse;margin-top:10px}
-th,td{padding:10px;border-bottom:1px solid var(--borda);text-align:left}
-.btn{padding:8px 12px;border-radius:6px;border:none;cursor:pointer}
-.primary{background:var(--destaque);color:#fff}
-.ghost{background:#fff;border:1px solid var(--borda)}
+th,td{padding:8px;border-bottom:1px solid var(--b)}
+.btn{padding:6px 10px;border-radius:6px;border:1px solid var(--b);cursor:pointer}
+.primary{background:var(--d);color:#fff;border:none}
 .alert{color:#dc2626;font-weight:600}
 input,select{width:100%;padding:6px;margin-bottom:6px}
-.small{font-size:.9rem}
 .hidden{display:none}
 </style>
 </head>
@@ -37,207 +30,164 @@ input,select{width:100%;padding:6px;margin-bottom:6px}
 <nav>
 <h2>BUFFET PRO</h2>
 
-<div class="label">Acesso</div>
+<div class="label">Login</div>
 <button class="btn-menu" onclick="login('admin')">👑 Admin</button>
 <button class="btn-menu" onclick="login('staff')">👷 Staff</button>
 
 <div class="label">Estoque</div>
 <button class="btn-menu" onclick="renderCategoria('Câmara')">📦 Câmara</button>
 <button class="btn-menu" onclick="renderCategoria('Freezer')">❄️ Freezer</button>
+<button class="btn-menu" onclick="renderCategoria('Material')">🍽 Material</button>
 <button class="btn-menu" onclick="renderCategoria('Equipamento')">⚡ Equipamentos</button>
-<button class="btn-menu" onclick="renderCategoria('Material')">🍽️ Materiais</button>
 
-<div class="label">Comercial</div>
-<button class="btn-menu" onclick="renderPropostas()">📋 Propostas</button>
+<div class="label">Eventos</div>
+<button class="btn-menu" onclick="renderProposta()">➕ Nova Proposta</button>
+<button class="btn-menu" onclick="renderEventos()">📆 Eventos</button>
 
-<div class="label">Admin</div>
-<button class="btn-menu admin-only" onclick="renderCadastro()">➕ Cadastrar Item</button>
-<button class="btn-menu admin-only" onclick="renderEventos()">📆 Eventos</button>
-<button class="btn-menu admin-only" onclick="renderRelatorio()">📊 Relatório Mensal</button>
-<button class="btn-menu admin-only" onclick="exportarInventario()">⬇️ Exportar Inventário</button>
+<div class="label admin-only">Admin</div>
+<button class="btn-menu admin-only" onclick="renderStaff()">👥 Staff</button>
+<button class="btn-menu admin-only" onclick="exportar()">⬇ Exportar Inventário</button>
 </nav>
 
 <main id="app"></main>
 
 <script>
-/* ====== AUTH ====== */
-let role = localStorage.getItem('role') || 'staff';
-function login(r){
-  role = r;
-  localStorage.setItem('role',r);
-  document.querySelectorAll('.admin-only').forEach(b=>{
-    b.style.display = role==='admin'?'block':'none';
-  });
-  alert('Logado como '+r);
-  renderHome();
-}
+let role=localStorage.getItem('role')||'staff';
+let estoque=JSON.parse(localStorage.getItem('estoque'))||[];
+let eventos=JSON.parse(localStorage.getItem('eventos'))||[];
+let staff=JSON.parse(localStorage.getItem('staff'))||[];
 
-/* ====== DATA ====== */
-let estoque = JSON.parse(localStorage.getItem('estoque')) || [
- {id:1,nome:'Carne',cat:'Câmara',qtd:30,min:10},
- {id:2,nome:'Polpa de fruta',cat:'Freezer',qtd:40,min:15},
- {id:3,nome:'Pratos',cat:'Material',qtd:120,min:80},
- {id:4,nome:'Fritadeira',cat:'Equipamento',qtd:2,min:1}
-];
-let eventos = JSON.parse(localStorage.getItem('eventos')) || [];
-
-/* ====== HOME ====== */
-function renderHome(){
- document.getElementById('app').innerHTML = `
-  <div class="card">
-    <h2>Gestão de Buffet</h2>
-    <p>Controle total de estoque, eventos e propostas.</p>
-    <p><b>Perfil:</b> ${role}</p>
-  </div>`;
-}
-renderHome();
 login(role);
 
-/* ====== ESTOQUE ====== */
-function renderCategoria(cat){
- let itens = estoque.filter(i=>i.cat===cat);
- let html = `
- <div class="card">
- <h3>${cat}</h3>
- <table>
- <tr><th>Item</th><th>Qtd</th><th>Ação</th></tr>`;
- itens.forEach(i=>{
-  html+=`
-   <tr>
-    <td>${i.nome}</td>
-    <td class="${i.qtd<i.min?'alert':''}">${i.qtd}</td>
-    <td>
-      <button class="btn ghost" onclick="ajustar(${i.id},1)">+</button>
-      <button class="btn ghost" onclick="ajustar(${i.id},-1)">-</button>
-    </td>
-   </tr>`;
+/* ===== LOGIN ===== */
+function login(r){
+ role=r;localStorage.setItem('role',r);
+ document.querySelectorAll('.admin-only').forEach(b=>{
+  b.style.display=r==='admin'?'block':'none';
  });
- html+='</table></div>';
- document.getElementById('app').innerHTML=html;
-}
-function ajustar(id,v){
- let it = estoque.find(i=>i.id===id);
- if(!it) return;
- it.qtd=Math.max(0,it.qtd+v);
- localStorage.setItem('estoque',JSON.stringify(estoque));
- renderCategoria(it.cat);
-}
-
-/* ====== CADASTRO ====== */
-function renderCadastro(){
- if(role!=='admin') return;
- document.getElementById('app').innerHTML=`
- <div class="card">
- <h3>Cadastrar Item</h3>
- <input id="n" placeholder="Nome">
- <select id="c">
-  <option>Câmara</option><option>Freezer</option>
-  <option>Equipamento</option><option>Material</option>
- </select>
- <input id="q" type="number" placeholder="Qtd">
- <input id="m" type="number" placeholder="Mínimo">
- <button class="btn primary" onclick="salvar()">Salvar</button>
- </div>`;
-}
-function salvar(){
- estoque.push({
-  id:Date.now(),
-  nome:n.value,
-  cat:c.value,
-  qtd:+q.value||0,
-  min:+m.value||0
- });
- localStorage.setItem('estoque',JSON.stringify(estoque));
  renderHome();
 }
 
-/* ====== PROPOSTAS ====== */
-function renderPropostas(){
- document.getElementById('app').innerHTML=`
- <div class="card">
- <h3>Nova Proposta</h3>
- <button class="btn primary" onclick="criarEvento()">Confirmar Evento</button>
+/* ===== HOME ===== */
+function renderHome(){
+ app.innerHTML=`<div class="card"><h2>Gestão de Buffet</h2>
+ <p>Perfil atual: <b>${role}</b></p></div>`;
+}
+
+/* ===== ESTOQUE ===== */
+function renderCategoria(cat){
+ let html=`<div class="card"><h3>${cat}</h3>
+ <table><tr><th>Item</th><th>Qtd</th><th>Ações</th></tr>`;
+ estoque.filter(i=>i.cat===cat).forEach(i=>{
+  html+=`<tr>
+   <td>${i.nome}</td>
+   <td class="${i.qtd<i.min?'alert':''}">${i.qtd}</td>
+   <td>
+    <button class="btn" onclick="ajustar(${i.id},1)">+</button>
+    <button class="btn" onclick="ajustar(${i.id},-1)">-</button>
+   </td></tr>`;
+ });
+ html+=`</table>
+ <h4>➕ Agregar ítem</h4>
+ <input id="n"><input id="q" type="number"><input id="m" type="number">
+ <button class="btn primary" onclick="agregar('${cat}')">Agregar</button>
+ </div>`;
+ app.innerHTML=html;
+}
+function ajustar(id,v){
+ let i=estoque.find(x=>x.id===id);
+ if(i){i.qtd=Math.max(0,i.qtd+v);}
+ save();
+}
+function agregar(cat){
+ estoque.push({id:Date.now(),nome:n.value,cat:cat,qtd:+q.value||0,min:+m.value||0});
+ save();renderCategoria(cat);
+}
+
+/* ===== PROPOSTA / EVENTO ===== */
+function renderProposta(){
+ app.innerHTML=`<div class="card">
+ <h3>Nueva Propuesta</h3>
+ <button class="btn primary" onclick="crearEvento()">Confirmar Evento</button>
  </div>`;
 }
-function criarEvento(){
- let itens = estoque.map(i=>({id:i.id,nome:i.nome,qty:1}));
- itens.forEach(it=>{
-  let prod=estoque.find(p=>p.id===it.id);
-  prod.qtd=Math.max(0,prod.qtd-it.qty);
+function crearEvento(){
+ let items=estoque.map(i=>({id:i.id,nome:i.nome,qty:1}));
+ items.forEach(it=>{
+  let p=estoque.find(x=>x.id===it.id);
+  if(p)p.qtd=Math.max(0,p.qtd-it.qty);
  });
- eventos.push({
-  id:Date.now(),
-  data:new Date().toISOString(),
-  itens:itens,
-  status:'ativo'
- });
- localStorage.setItem('estoque',JSON.stringify(estoque));
- localStorage.setItem('eventos',JSON.stringify(eventos));
+ eventos.push({id:Date.now(),fecha:new Date().toISOString(),items:items,status:'activo'});
+ save();
  renderEventos();
 }
 
-/* ====== EVENTOS + HISTORIAL ====== */
+/* ===== EVENTOS ===== */
 function renderEventos(){
- let html=`
- <div class="card">
- <h3>Eventos</h3>
- <table>
- <tr><th>Data</th><th>Status</th><th>Ação</th></tr>`;
+ let html=`<div class="card"><h3>Eventos</h3><table>
+ <tr><th>Fecha</th><th>Status</th><th>Ver</th></tr>`;
  eventos.forEach(e=>{
-  html+=`
-   <tr>
-    <td>${new Date(e.data).toLocaleString()}</td>
-    <td>${e.status}</td>
-    <td>${e.status==='ativo'
-      ?`<button class="btn ghost" onclick="finalizar(${e.id})">Finalizar</button>`
-      :'✔'}</td>
-   </tr>`;
+  html+=`<tr>
+   <td>${new Date(e.fecha).toLocaleString()}</td>
+   <td>${e.status}</td>
+   <td><button class="btn" onclick="verEvento(${e.id})">Abrir</button></td>
+  </tr>`;
  });
- html+='</table></div>';
- document.getElementById('app').innerHTML=html;
+ html+=`</table></div>`;
+ app.innerHTML=html;
+}
+function verEvento(id){
+ let e=eventos.find(x=>x.id===id);
+ let html=`<div class="card"><h3>Evento</h3>
+ <p>${new Date(e.fecha).toLocaleString()}</p>
+ <ul>`;
+ e.items.forEach(i=>html+=`<li>${i.nome} – ${i.qty}</li>`);
+ html+=`</ul>`;
+ if(e.status==='activo'){
+  html+=`<button class="btn primary" onclick="finalizar(${id})">Finalizar</button>`;
+ }
+ html+=`</div>`;
+ app.innerHTML=html;
 }
 function finalizar(id){
- let ev=eventos.find(e=>e.id===id);
- if(!ev) return;
- ev.itens.forEach(it=>{
+ let e=eventos.find(x=>x.id===id);
+ e.items.forEach(it=>{
   let p=estoque.find(x=>x.id===it.id);
-  if(p) p.qtd+=it.qty;
+  if(p)p.qtd+=it.qty;
  });
- ev.status='finalizado';
- localStorage.setItem('estoque',JSON.stringify(estoque));
- localStorage.setItem('eventos',JSON.stringify(eventos));
- renderEventos();
+ e.status='finalizado';
+ save();renderEventos();
 }
 
-/* ====== RELATÓRIO MENSAL ====== */
-function renderRelatorio(){
- let porMes={};
- eventos.forEach(e=>{
-  let m=new Date(e.data).toISOString().slice(0,7);
-  porMes[m]=(porMes[m]||0)+1;
- });
- let html=`<div class="card"><h3>Relatório Mensal</h3><ul>`;
- Object.keys(porMes).forEach(m=>{
-  html+=`<li>${m} — ${porMes[m]} eventos</li>`;
- });
- html+='</ul></div>';
- document.getElementById('app').innerHTML=html;
+/* ===== STAFF ===== */
+function renderStaff(){
+ let html=`<div class="card"><h3>Staff</h3>
+ <ul>${staff.map(s=>`<li>${s}</li>`).join('')}</ul>
+ <input id="s"><button class="btn primary" onclick="addStaff()">Add Staff</button>
+ </div>`;
+ app.innerHTML=html;
+}
+function addStaff(){
+ staff.push(s.value);localStorage.setItem('staff',JSON.stringify(staff));
+ renderStaff();
 }
 
-/* ====== EXPORT INVENTÁRIO ====== */
-function exportarInventario(){
- let csv='Item,Categoria,Quantidade,Mínimo\n';
- estoque.forEach(i=>{
-  csv+=`${i.nome},${i.cat},${i.qtd},${i.min}\n`;
- });
- let blob=new Blob([csv],{type:'text/csv'});
+/* ===== EXPORT ===== */
+function exportar(){
+ let csv='Item,Categoria,Quantidade,Minimo\n';
+ estoque.forEach(i=>csv+=`${i.nome},${i.cat},${i.qtd},${i.min}\n`);
  let a=document.createElement('a');
- a.href=URL.createObjectURL(blob);
- a.download='inventario_buffet.csv';
+ a.href=URL.createObjectURL(new Blob([csv]));
+ a.download='inventario.csv';
  a.click();
 }
-</script>
 
+function save(){
+ localStorage.setItem('estoque',JSON.stringify(estoque));
+ localStorage.setItem('eventos',JSON.stringify(eventos));
+}
+</script>
 </body>
 </html>
+
 
