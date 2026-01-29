@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Gestão de Buffet | Além do Bolo</title>
+
+<style>
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+}
+.container {
+  display: flex;
+}
+.sidebar {
+  width: 240px;
+  background: #2f2f2f;
+  color: #fff;
+  height: 100vh;
+  padding: 20px;
+}
+.sidebar h2 {
+  text-align: center;
+}
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+}
+.sidebar li {
+  margin: 12px 0;
+  cursor: pointer;
+}
+.sidebar li:hover {
+  color: #f4c430;
+}
+.content {
+  flex: 1;
+  padding: 20px;
+}
+.section {
+  display: none;
+  background: #f9f9f9;
+  padding: 20px;
+  border-radius: 8px;
+}
+.section.active {
+  display: block;
+}
+.item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 0;
+}
+button {
+  cursor: pointer;
+}
+input {
+  padding: 5px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <!-- MENU -->
+  <aside class="sidebar">
+    <h2>Gestão</h2>
+    <ul>
+      <li onclick="show('alimentos')">🍎 Estoque de Alimentos</li>
+      <li onclick="show('equipamentos')">🔧 Equipamentos</li>
+      <li onclick="show('servico')">🍽 Material de Serviço</li>
+      <li onclick="show('propostas')">📋 Propostas</li>
+      <li onclick="show('staff')">👥 Painel do Staff</li>
+    </ul>
+  </aside>
+
+  <!-- CONTEÚDO -->
+  <main class="content">
+
+    <!-- ALIMENTOS -->
+    <div id="alimentos" class="section active">
+      <h3>Estoque de Alimentos</h3>
+
+      <div class="item">
+        <span>Câmara Fria</span>
+        <button onclick="change('camara',-1)">-</button>
+        <span id="camara">0</span>
+        <button onclick="change('camara',1)">+</button>
+      </div>
+
+      <div class="item">
+        <span>Freezer 1</span>
+        <button onclick="change('freezer1',-1)">-</button>
+        <span id="freezer1">0</span>
+        <button onclick="change('freezer1',1)">+</button>
+      </div>
+
+      <div class="item">
+        <span>Freezer 2</span>
+        <button onclick="change('freezer2',-1)">-</button>
+        <span id="freezer2">0</span>
+        <button onclick="change('freezer2',1)">+</button>
+      </div>
+
+      <h4>Cadastrar manualmente</h4>
+      <input id="novoItem" placeholder="Nome do item">
+      <button onclick="addItem()">Adicionar</button>
+
+      <div id="listaExtra"></div>
+    </div>
+
+    <!-- EQUIPAMENTOS -->
+    <div id="equipamentos" class="section">
+      <h3>Estoque de Equipamentos</h3>
+      <ul>
+        <li>Freezers e Geladeiras</li>
+        <li>Fornos</li>
+        <li>Air Fryer</li>
+        <li>Fritadeiras</li>
+        <li>Fogões e Cooktop</li>
+        <li>Micro-ondas</li>
+        <li>Chaleiras Elétricas e Cafeteiras</li>
+        <li>Filtros de Água</li>
+        <li>Torradeiras e Grill</li>
+      </ul>
+    </div>
+
+    <!-- MATERIAL -->
+    <div id="servico" class="section">
+      <h3>Material de Serviço</h3>
+      <ul>
+        <li>Bandejas</li>
+        <li>Pratos e Suplats</li>
+        <li>Bowls</li>
+        <li>Copos e Taças</li>
+        <li>Finger Food</li>
+        <li>Talheres de Refeição</li>
+        <li>Talheres de Serviço</li>
+      </ul>
+    </div>
+
+    <!-- PROPOSTAS -->
+    <div id="propostas" class="section">
+      <h3>Propostas</h3>
+      <ul>
+        <li>Café da Manhã</li>
+        <li>Coffee Break</li>
+        <li>Almoço</li>
+        <li>Jantar</li>
+        <li>Coquetel</li>
+      </ul>
+    </div>
+
+    <!-- STAFF -->
+    <div id="staff" class="section">
+      <h3>Painel do Staff</h3>
+      <p>🛒 Lista de compras necessárias</p>
+      <p>📄 Última proposta</p>
+      <p>👤 Pessoal para a proposta</p>
+    </div>
+
+  </main>
+</div>
+
+<script>
+function show(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function change(id, value) {
+  let el = document.getElementById(id);
+  let qty = parseInt(el.innerText);
+  qty += value;
+  if (qty < 0) qty = 0;
+  el.innerText = qty;
+}
+
+function addItem() {
+  let name = document.getElementById('novoItem').value;
+  if (!name) return alert("Digite um nome");
+
+  let id = name.replace(/\s/g,'');
+  let div = document.createElement('div');
+  div.className = "item";
+  div.innerHTML = `
+    <span>${name}</span>
+    <button onclick="change('${id}',-1)">-</button>
+    <span id="${id}">0</span>
+    <button onclick="change('${id}',1)">+</button>
+  `;
+  document.getElementById('listaExtra').appendChild(div);
+  document.getElementById('novoItem').value = "";
+}
+</script>
+
+</body>
+</html>
