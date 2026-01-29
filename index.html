@@ -1,201 +1,243 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-br">
 <head>
-<meta charset="UTF-8">
-<title>Gestão de Buffet | Além do Bolo</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gestão Buffet – Além do Bolo</title>
 
 <style>
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
+:root{
+  --primaria:#0f172a;
+  --destaque:#10b981;
+  --fundo:#f8fafc;
+  --borda:#e2e8f0;
 }
-.container {
-  display: flex;
-}
-.sidebar {
-  width: 240px;
-  background: #2f2f2f;
-  color: #fff;
-  height: 100vh;
-  padding: 20px;
-}
-.sidebar h2 {
-  text-align: center;
-}
-.sidebar ul {
-  list-style: none;
-  padding: 0;
-}
-.sidebar li {
-  margin: 12px 0;
-  cursor: pointer;
-}
-.sidebar li:hover {
-  color: #f4c430;
-}
-.content {
-  flex: 1;
-  padding: 20px;
-}
-.section {
-  display: none;
-  background: #f9f9f9;
-  padding: 20px;
-  border-radius: 8px;
-}
-.section.active {
-  display: block;
-}
-.item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 8px 0;
-}
-button {
-  cursor: pointer;
-}
-input {
-  padding: 5px;
-}
+body{margin:0;font-family:Segoe UI,sans-serif;display:flex;background:var(--fundo)}
+nav{width:300px;background:var(--primaria);color:#fff;height:100vh;position:fixed;padding:18px;overflow:auto}
+nav h2{color:var(--destaque);margin-bottom:10px}
+.btn-menu{width:100%;margin-bottom:6px;padding:10px;background:#1e293b;border:0;color:white;border-radius:6px;text-align:left;cursor:pointer}
+.btn-menu:hover{background:rgba(16,185,129,.15)}
+.label{font-size:.7rem;color:#94a3b8;margin:12px 0 6px}
+main{margin-left:320px;padding:24px;width:100%}
+.card{background:#fff;padding:20px;border-radius:10px;border:1px solid var(--borda);margin-bottom:16px}
+table{width:100%;border-collapse:collapse;margin-top:10px}
+th,td{padding:10px;border-bottom:1px solid var(--borda);text-align:left}
+.btn{padding:8px 12px;border-radius:6px;border:none;cursor:pointer}
+.primary{background:var(--destaque);color:#fff}
+.ghost{background:#fff;border:1px solid var(--borda)}
+.alert{color:#dc2626;font-weight:600}
+input,select{width:100%;padding:6px;margin-bottom:6px}
+.small{font-size:.9rem}
+.hidden{display:none}
 </style>
 </head>
 
 <body>
 
-<div class="container">
+<nav>
+<h2>BUFFET PRO</h2>
 
-  <!-- MENU -->
-  <aside class="sidebar">
-    <h2>Gestão</h2>
-    <ul>
-      <li onclick="show('alimentos')">🍎 Estoque de Alimentos</li>
-      <li onclick="show('equipamentos')">🔧 Equipamentos</li>
-      <li onclick="show('servico')">🍽 Material de Serviço</li>
-      <li onclick="show('propostas')">📋 Propostas</li>
-      <li onclick="show('staff')">👥 Painel do Staff</li>
-    </ul>
-  </aside>
+<div class="label">Acesso</div>
+<button class="btn-menu" onclick="login('admin')">👑 Admin</button>
+<button class="btn-menu" onclick="login('staff')">👷 Staff</button>
 
-  <!-- CONTEÚDO -->
-  <main class="content">
+<div class="label">Estoque</div>
+<button class="btn-menu" onclick="renderCategoria('Câmara')">📦 Câmara</button>
+<button class="btn-menu" onclick="renderCategoria('Freezer')">❄️ Freezer</button>
+<button class="btn-menu" onclick="renderCategoria('Equipamento')">⚡ Equipamentos</button>
+<button class="btn-menu" onclick="renderCategoria('Material')">🍽️ Materiais</button>
 
-    <!-- ALIMENTOS -->
-    <div id="alimentos" class="section active">
-      <h3>Estoque de Alimentos</h3>
+<div class="label">Comercial</div>
+<button class="btn-menu" onclick="renderPropostas()">📋 Propostas</button>
 
-      <div class="item">
-        <span>Câmara Fria</span>
-        <button onclick="change('camara',-1)">-</button>
-        <span id="camara">0</span>
-        <button onclick="change('camara',1)">+</button>
-      </div>
+<div class="label">Admin</div>
+<button class="btn-menu admin-only" onclick="renderCadastro()">➕ Cadastrar Item</button>
+<button class="btn-menu admin-only" onclick="renderEventos()">📆 Eventos</button>
+<button class="btn-menu admin-only" onclick="renderRelatorio()">📊 Relatório Mensal</button>
+<button class="btn-menu admin-only" onclick="exportarInventario()">⬇️ Exportar Inventário</button>
+</nav>
 
-      <div class="item">
-        <span>Freezer 1</span>
-        <button onclick="change('freezer1',-1)">-</button>
-        <span id="freezer1">0</span>
-        <button onclick="change('freezer1',1)">+</button>
-      </div>
-
-      <div class="item">
-        <span>Freezer 2</span>
-        <button onclick="change('freezer2',-1)">-</button>
-        <span id="freezer2">0</span>
-        <button onclick="change('freezer2',1)">+</button>
-      </div>
-
-      <h4>Cadastrar manualmente</h4>
-      <input id="novoItem" placeholder="Nome do item">
-      <button onclick="addItem()">Adicionar</button>
-
-      <div id="listaExtra"></div>
-    </div>
-
-    <!-- EQUIPAMENTOS -->
-    <div id="equipamentos" class="section">
-      <h3>Estoque de Equipamentos</h3>
-      <ul>
-        <li>Freezers e Geladeiras</li>
-        <li>Fornos</li>
-        <li>Air Fryer</li>
-        <li>Fritadeiras</li>
-        <li>Fogões e Cooktop</li>
-        <li>Micro-ondas</li>
-        <li>Chaleiras Elétricas e Cafeteiras</li>
-        <li>Filtros de Água</li>
-        <li>Torradeiras e Grill</li>
-      </ul>
-    </div>
-
-    <!-- MATERIAL -->
-    <div id="servico" class="section">
-      <h3>Material de Serviço</h3>
-      <ul>
-        <li>Bandejas</li>
-        <li>Pratos e Suplats</li>
-        <li>Bowls</li>
-        <li>Copos e Taças</li>
-        <li>Finger Food</li>
-        <li>Talheres de Refeição</li>
-        <li>Talheres de Serviço</li>
-      </ul>
-    </div>
-
-    <!-- PROPOSTAS -->
-    <div id="propostas" class="section">
-      <h3>Propostas</h3>
-      <ul>
-        <li>Café da Manhã</li>
-        <li>Coffee Break</li>
-        <li>Almoço</li>
-        <li>Jantar</li>
-        <li>Coquetel</li>
-      </ul>
-    </div>
-
-    <!-- STAFF -->
-    <div id="staff" class="section">
-      <h3>Painel do Staff</h3>
-      <p>🛒 Lista de compras necessárias</p>
-      <p>📄 Última proposta</p>
-      <p>👤 Pessoal para a proposta</p>
-    </div>
-
-  </main>
-</div>
+<main id="app"></main>
 
 <script>
-function show(id) {
-  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
+/* ====== AUTH ====== */
+let role = localStorage.getItem('role') || 'staff';
+function login(r){
+  role = r;
+  localStorage.setItem('role',r);
+  document.querySelectorAll('.admin-only').forEach(b=>{
+    b.style.display = role==='admin'?'block':'none';
+  });
+  alert('Logado como '+r);
+  renderHome();
 }
 
-function change(id, value) {
-  let el = document.getElementById(id);
-  let qty = parseInt(el.innerText);
-  qty += value;
-  if (qty < 0) qty = 0;
-  el.innerText = qty;
+/* ====== DATA ====== */
+let estoque = JSON.parse(localStorage.getItem('estoque')) || [
+ {id:1,nome:'Carne',cat:'Câmara',qtd:30,min:10},
+ {id:2,nome:'Polpa de fruta',cat:'Freezer',qtd:40,min:15},
+ {id:3,nome:'Pratos',cat:'Material',qtd:120,min:80},
+ {id:4,nome:'Fritadeira',cat:'Equipamento',qtd:2,min:1}
+];
+let eventos = JSON.parse(localStorage.getItem('eventos')) || [];
+
+/* ====== HOME ====== */
+function renderHome(){
+ document.getElementById('app').innerHTML = `
+  <div class="card">
+    <h2>Gestão de Buffet</h2>
+    <p>Controle total de estoque, eventos e propostas.</p>
+    <p><b>Perfil:</b> ${role}</p>
+  </div>`;
+}
+renderHome();
+login(role);
+
+/* ====== ESTOQUE ====== */
+function renderCategoria(cat){
+ let itens = estoque.filter(i=>i.cat===cat);
+ let html = `
+ <div class="card">
+ <h3>${cat}</h3>
+ <table>
+ <tr><th>Item</th><th>Qtd</th><th>Ação</th></tr>`;
+ itens.forEach(i=>{
+  html+=`
+   <tr>
+    <td>${i.nome}</td>
+    <td class="${i.qtd<i.min?'alert':''}">${i.qtd}</td>
+    <td>
+      <button class="btn ghost" onclick="ajustar(${i.id},1)">+</button>
+      <button class="btn ghost" onclick="ajustar(${i.id},-1)">-</button>
+    </td>
+   </tr>`;
+ });
+ html+='</table></div>';
+ document.getElementById('app').innerHTML=html;
+}
+function ajustar(id,v){
+ let it = estoque.find(i=>i.id===id);
+ if(!it) return;
+ it.qtd=Math.max(0,it.qtd+v);
+ localStorage.setItem('estoque',JSON.stringify(estoque));
+ renderCategoria(it.cat);
 }
 
-function addItem() {
-  let name = document.getElementById('novoItem').value;
-  if (!name) return alert("Digite um nome");
+/* ====== CADASTRO ====== */
+function renderCadastro(){
+ if(role!=='admin') return;
+ document.getElementById('app').innerHTML=`
+ <div class="card">
+ <h3>Cadastrar Item</h3>
+ <input id="n" placeholder="Nome">
+ <select id="c">
+  <option>Câmara</option><option>Freezer</option>
+  <option>Equipamento</option><option>Material</option>
+ </select>
+ <input id="q" type="number" placeholder="Qtd">
+ <input id="m" type="number" placeholder="Mínimo">
+ <button class="btn primary" onclick="salvar()">Salvar</button>
+ </div>`;
+}
+function salvar(){
+ estoque.push({
+  id:Date.now(),
+  nome:n.value,
+  cat:c.value,
+  qtd:+q.value||0,
+  min:+m.value||0
+ });
+ localStorage.setItem('estoque',JSON.stringify(estoque));
+ renderHome();
+}
 
-  let id = name.replace(/\s/g,'');
-  let div = document.createElement('div');
-  div.className = "item";
-  div.innerHTML = `
-    <span>${name}</span>
-    <button onclick="change('${id}',-1)">-</button>
-    <span id="${id}">0</span>
-    <button onclick="change('${id}',1)">+</button>
-  `;
-  document.getElementById('listaExtra').appendChild(div);
-  document.getElementById('novoItem').value = "";
+/* ====== PROPOSTAS ====== */
+function renderPropostas(){
+ document.getElementById('app').innerHTML=`
+ <div class="card">
+ <h3>Nova Proposta</h3>
+ <button class="btn primary" onclick="criarEvento()">Confirmar Evento</button>
+ </div>`;
+}
+function criarEvento(){
+ let itens = estoque.map(i=>({id:i.id,nome:i.nome,qty:1}));
+ itens.forEach(it=>{
+  let prod=estoque.find(p=>p.id===it.id);
+  prod.qtd=Math.max(0,prod.qtd-it.qty);
+ });
+ eventos.push({
+  id:Date.now(),
+  data:new Date().toISOString(),
+  itens:itens,
+  status:'ativo'
+ });
+ localStorage.setItem('estoque',JSON.stringify(estoque));
+ localStorage.setItem('eventos',JSON.stringify(eventos));
+ renderEventos();
+}
+
+/* ====== EVENTOS + HISTORIAL ====== */
+function renderEventos(){
+ let html=`
+ <div class="card">
+ <h3>Eventos</h3>
+ <table>
+ <tr><th>Data</th><th>Status</th><th>Ação</th></tr>`;
+ eventos.forEach(e=>{
+  html+=`
+   <tr>
+    <td>${new Date(e.data).toLocaleString()}</td>
+    <td>${e.status}</td>
+    <td>${e.status==='ativo'
+      ?`<button class="btn ghost" onclick="finalizar(${e.id})">Finalizar</button>`
+      :'✔'}</td>
+   </tr>`;
+ });
+ html+='</table></div>';
+ document.getElementById('app').innerHTML=html;
+}
+function finalizar(id){
+ let ev=eventos.find(e=>e.id===id);
+ if(!ev) return;
+ ev.itens.forEach(it=>{
+  let p=estoque.find(x=>x.id===it.id);
+  if(p) p.qtd+=it.qty;
+ });
+ ev.status='finalizado';
+ localStorage.setItem('estoque',JSON.stringify(estoque));
+ localStorage.setItem('eventos',JSON.stringify(eventos));
+ renderEventos();
+}
+
+/* ====== RELATÓRIO MENSAL ====== */
+function renderRelatorio(){
+ let porMes={};
+ eventos.forEach(e=>{
+  let m=new Date(e.data).toISOString().slice(0,7);
+  porMes[m]=(porMes[m]||0)+1;
+ });
+ let html=`<div class="card"><h3>Relatório Mensal</h3><ul>`;
+ Object.keys(porMes).forEach(m=>{
+  html+=`<li>${m} — ${porMes[m]} eventos</li>`;
+ });
+ html+='</ul></div>';
+ document.getElementById('app').innerHTML=html;
+}
+
+/* ====== EXPORT INVENTÁRIO ====== */
+function exportarInventario(){
+ let csv='Item,Categoria,Quantidade,Mínimo\n';
+ estoque.forEach(i=>{
+  csv+=`${i.nome},${i.cat},${i.qtd},${i.min}\n`;
+ });
+ let blob=new Blob([csv],{type:'text/csv'});
+ let a=document.createElement('a');
+ a.href=URL.createObjectURL(blob);
+ a.download='inventario_buffet.csv';
+ a.click();
 }
 </script>
 
 </body>
 </html>
+
