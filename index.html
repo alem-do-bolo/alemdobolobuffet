@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Gestão Buffet – Além do Bolo</title>
+<title>Além do Bolo – Sistema Buffet</title>
 
 <style>
 :root{--p:#0f172a;--d:#10b981;--b:#e2e8f0}
@@ -14,180 +14,245 @@ nav h2{color:var(--d)}
 .btn-menu:hover{background:rgba(16,185,129,.2)}
 .label{font-size:.7rem;color:#94a3b8;margin:12px 0 6px}
 main{margin-left:320px;padding:24px;width:100%}
-.card{background:#fff;padding:18px;border-radius:10px;border:1px solid var(--b)}
-table{width:100%;border-collapse:collapse;margin-top:10px}
+.card{background:#fff;padding:18px;border-radius:10px;border:1px solid var(--b);margin-bottom:16px}
+table{width:100%;border-collapse:collapse}
 th,td{padding:8px;border-bottom:1px solid var(--b)}
 .btn{padding:6px 10px;border-radius:6px;border:1px solid var(--b);cursor:pointer}
 .primary{background:var(--d);color:#fff;border:none}
 .alert{color:#dc2626;font-weight:600}
 input,select{width:100%;padding:6px;margin-bottom:6px}
 .hidden{display:none}
+.badge{padding:3px 8px;border-radius:10px;font-size:.75rem}
+.pendente{background:#fde68a}
+.ativo{background:#86efac}
+.finalizado{background:#cbd5f5}
 </style>
 </head>
 
 <body>
 
-<nav>
-<h2>Além do Bolo</h2>
-
-<div class="label">Login</div>
-<button class="btn-menu" onclick="login('admin')">👑 Admin</button>
-<button class="btn-menu" onclick="login('staff')">👷 Staff</button>
+<nav id="menu" class="hidden">
+<h2>BUFFET PRO</h2>
 
 <div class="label">Estoque</div>
-<button class="btn-menu" onclick="renderCategoria('Câmara')">📦 Câmara</button>
-<button class="btn-menu" onclick="renderCategoria('Freezer')">❄️ Freezer</button>
-<button class="btn-menu" onclick="renderCategoria('Material')">🍽 Material</button>
-<button class="btn-menu" onclick="renderCategoria('Equipamento')">⚡ Equipamentos</button>
+<button class="btn-menu staff-only" onclick="renderCategoria('Câmara')">📦 Câmara</button>
+<button class="btn-menu staff-only" onclick="renderCategoria('Freezer')">❄️ Freezer</button>
+<button class="btn-menu staff-only" onclick="renderCategoria('Material')">🍽 Material</button>
 
 <div class="label">Eventos</div>
-<button class="btn-menu" onclick="renderProposta()">➕ Nova Proposta</button>
-<button class="btn-menu" onclick="renderEventos()">📆 Eventos</button>
+<button class="btn-menu staff-only" onclick="renderEventos()">📆 Eventos</button>
 
-<div class="label admin-only">Admin</div>
-<button class="btn-menu admin-only" onclick="renderStaff()">👥 Staff</button>
+<div class="label">Cliente</div>
+<button class="btn-menu cliente-only" onclick="novoPedido()">📝 Novo Pedido</button>
+<button class="btn-menu cliente-only" onclick="meusPedidos()">📋 Meus Pedidos</button>
+
+<div class="label">Admin</div>
+<button class="btn-menu admin-only" onclick="renderUsuarios()">👥 Usuários</button>
 <button class="btn-menu admin-only" onclick="exportar()">⬇ Exportar Inventário</button>
+
+<button class="btn-menu" onclick="logout()">🚪 Sair</button>
 </nav>
 
 <main id="app"></main>
 
 <script>
-let role=localStorage.getItem('role')||'staff';
-let estoque=JSON.parse(localStorage.getItem('estoque'))||[];
-let eventos=JSON.parse(localStorage.getItem('eventos'))||[];
-let staff=JSON.parse(localStorage.getItem('staff'))||[];
+/* ================= USUÁRIOS ================= */
+let usuarios = JSON.parse(localStorage.getItem('usuarios')) || [
+ {user:'admin',pass:'123',role:'admin'},
+ {user:'staff',pass:'123',role:'staff'},
+ {user:'cliente',pass:'123',role:'cliente'}
+];
+let usuarioAtual = JSON.parse(localStorage.getItem('usuarioAtual')) || null;
 
-login(role);
+/* ================= DADOS ================= */
+let estoque = JSON.parse(localStorage.getItem('estoque')) || [
+ {id:1,nome:'Carne',cat:'Câmara',qtd:20,min:10},
+ {id:2,nome:'Polpa',cat:'Freezer',qtd:30,min:15},
+ {id:3,nome:'Pratos',cat:'Material',qtd:100,min:50}
+];
 
-/* ===== LOGIN ===== */
-function login(r){
- role=r;localStorage.setItem('role',r);
- document.querySelectorAll('.admin-only').forEach(b=>{
-  b.style.display=r==='admin'?'block':'none';
- });
+let eventos = JSON.parse(localStorage.getItem('eventos')) || [];
+let pedidos = JSON.parse(localStorage.getItem('pedidos')) || [];
+
+/* ================= LOGIN ================= */
+function renderLogin(){
+ app.innerHTML=`
+ <div class="card" style="max-width:400px">
+ <h3>Login</h3>
+ <input id="lu" placeholder="Usuário">
+ <input id="lp" type="password" placeholder="Senha">
+ <button class="btn primary" onclick="login()">Entrar</button>
+ </div>`;
+}
+renderLogin();
+
+function login(){
+ let u = usuarios.find(x=>x.user===lu.value && x.pass===lp.value);
+ if(!u){ alert('Login inválido'); return; }
+ usuarioAtual=u;
+ localStorage.setItem('usuarioAtual',JSON.stringify(u));
+ aplicarPermissoes();
+}
+function logout(){
+ localStorage.clear();
+ location.reload();
+}
+
+/* ================= PERMISSÕES ================= */
+function aplicarPermissoes(){
+ menu.classList.remove('hidden');
+ document.querySelectorAll('.admin-only')
+  .forEach(e=>e.style.display=usuarioAtual.role==='admin'?'block':'none');
+ document.querySelectorAll('.staff-only')
+  .forEach(e=>e.style.display=(usuarioAtual.role!=='cliente')?'block':'none');
+ document.querySelectorAll('.cliente-only')
+  .forEach(e=>e.style.display=usuarioAtual.role==='cliente'?'block':'none');
  renderHome();
 }
 
-/* ===== HOME ===== */
+/* ================= HOME ================= */
 function renderHome(){
- app.innerHTML=`<div class="card"><h2>Gestão de Buffet</h2>
- <p>Perfil atual: <b>${role}</b></p></div>`;
+ app.innerHTML=`
+ <div class="card">
+ <h2>Bem-vindo ${usuarioAtual.user}</h2>
+ <p>Perfil: <b>${usuarioAtual.role}</b></p>
+ </div>`;
 }
 
-/* ===== ESTOQUE ===== */
+/* ================= ESTOQUE ================= */
 function renderCategoria(cat){
- let html=`<div class="card"><h3>${cat}</h3>
- <table><tr><th>Item</th><th>Qtd</th><th>Ações</th></tr>`;
+ let html=`<div class="card"><h3>${cat}</h3><table>
+ <tr><th>Item</th><th>Qtd</th><th>Ações</th></tr>`;
  estoque.filter(i=>i.cat===cat).forEach(i=>{
   html+=`<tr>
-   <td>${i.nome}</td>
-   <td class="${i.qtd<i.min?'alert':''}">${i.qtd}</td>
-   <td>
-    <button class="btn" onclick="ajustar(${i.id},1)">+</button>
-    <button class="btn" onclick="ajustar(${i.id},-1)">-</button>
-   </td></tr>`;
+  <td>${i.nome}</td>
+  <td class="${i.qtd<i.min?'alert':''}">${i.qtd}</td>
+  <td>
+   <button class="btn" onclick="ajustar(${i.id},1)">+</button>
+   <button class="btn" onclick="ajustar(${i.id},-1)">-</button>
+  </td></tr>`;
  });
  html+=`</table>
- <h4>➕ Agregar ítem</h4>
- <input id="n"><input id="q" type="number"><input id="m" type="number">
+ <h4>➕ Agregar item</h4>
+ <input id="n" placeholder="Nome">
+ <input id="q" type="number" placeholder="Qtd">
+ <input id="m" type="number" placeholder="Min">
  <button class="btn primary" onclick="agregar('${cat}')">Agregar</button>
  </div>`;
  app.innerHTML=html;
 }
 function ajustar(id,v){
  let i=estoque.find(x=>x.id===id);
- if(i){i.qtd=Math.max(0,i.qtd+v);}
+ if(i)i.qtd=Math.max(0,i.qtd+v);
  save();
 }
 function agregar(cat){
- estoque.push({id:Date.now(),nome:n.value,cat:cat,qtd:+q.value||0,min:+m.value||0});
+ estoque.push({id:Date.now(),nome:n.value,cat,qtd:+q.value,min:+m.value});
  save();renderCategoria(cat);
 }
 
-/* ===== PROPOSTA / EVENTO ===== */
-function renderProposta(){
- app.innerHTML=`<div class="card">
- <h3>Nueva Propuesta</h3>
- <button class="btn primary" onclick="crearEvento()">Confirmar Evento</button>
+/* ================= CLIENTE – PEDIDOS ================= */
+function novoPedido(){
+ app.innerHTML=`
+ <div class="card">
+ <h3>Novo Pedido</h3>
+ <select id="tipo">
+  <option>Café da manhã</option>
+  <option>Coffee break</option>
+  <option>Almoço</option>
+  <option>Jantar</option>
+  <option>Coquetel</option>
+ </select>
+ <button class="btn primary" onclick="criarPedido()">Enviar Pedido</button>
  </div>`;
 }
-function crearEvento(){
- let items=estoque.map(i=>({id:i.id,nome:i.nome,qty:1}));
- items.forEach(it=>{
-  let p=estoque.find(x=>x.id===it.id);
-  if(p)p.qtd=Math.max(0,p.qtd-it.qty);
+function criarPedido(){
+ pedidos.push({
+  id:Date.now(),
+  cliente:usuarioAtual.user,
+  tipo:tipo.value,
+  status:'pendente',
+  data:new Date().toISOString()
  });
- eventos.push({id:Date.now(),fecha:new Date().toISOString(),items:items,status:'activo'});
  save();
- renderEventos();
+ meusPedidos();
 }
-
-/* ===== EVENTOS ===== */
-function renderEventos(){
- let html=`<div class="card"><h3>Eventos</h3><table>
- <tr><th>Fecha</th><th>Status</th><th>Ver</th></tr>`;
- eventos.forEach(e=>{
+function meusPedidos(){
+ let html=`<div class="card"><h3>Meus Pedidos</h3><table>
+ <tr><th>Data</th><th>Tipo</th><th>Status</th></tr>`;
+ pedidos.filter(p=>p.cliente===usuarioAtual.user)
+ .forEach(p=>{
   html+=`<tr>
-   <td>${new Date(e.fecha).toLocaleString()}</td>
-   <td>${e.status}</td>
-   <td><button class="btn" onclick="verEvento(${e.id})">Abrir</button></td>
+  <td>${new Date(p.data).toLocaleString()}</td>
+  <td>${p.tipo}</td>
+  <td><span class="badge ${p.status}">${p.status}</span></td>
   </tr>`;
  });
- html+=`</table></div>`;
+ html+='</table></div>';
  app.innerHTML=html;
 }
-function verEvento(id){
- let e=eventos.find(x=>x.id===id);
- let html=`<div class="card"><h3>Evento</h3>
- <p>${new Date(e.fecha).toLocaleString()}</p>
- <ul>`;
- e.items.forEach(i=>html+=`<li>${i.nome} – ${i.qty}</li>`);
- html+=`</ul>`;
- if(e.status==='activo'){
-  html+=`<button class="btn primary" onclick="finalizar(${id})">Finalizar</button>`;
- }
- html+=`</div>`;
- app.innerHTML=html;
-}
-function finalizar(id){
- let e=eventos.find(x=>x.id===id);
- e.items.forEach(it=>{
-  let p=estoque.find(x=>x.id===it.id);
-  if(p)p.qtd+=it.qty;
+
+/* ================= EVENTOS (STAFF) ================= */
+function renderEventos(){
+ let html=`<div class="card"><h3>Eventos</h3><table>
+ <tr><th>Cliente</th><th>Tipo</th><th>Status</th><th>Ação</th></tr>`;
+ pedidos.forEach(p=>{
+  html+=`<tr>
+  <td>${p.cliente}</td>
+  <td>${p.tipo}</td>
+  <td>${p.status}</td>
+  <td>
+   ${p.status==='pendente'
+    ?`<button class="btn" onclick="ativar(${p.id})">Ativar</button>`:''}
+  </td></tr>`;
  });
- e.status='finalizado';
+ html+='</table></div>';
+ app.innerHTML=html;
+}
+function ativar(id){
+ let p=pedidos.find(x=>x.id===id);
+ p.status='ativo';
  save();renderEventos();
 }
 
-/* ===== STAFF ===== */
-function renderStaff(){
- let html=`<div class="card"><h3>Staff</h3>
- <ul>${staff.map(s=>`<li>${s}</li>`).join('')}</ul>
- <input id="s"><button class="btn primary" onclick="addStaff()">Add Staff</button>
+/* ================= USUÁRIOS ================= */
+function renderUsuarios(){
+ let html=`<div class="card"><h3>Usuários</h3><table>
+ <tr><th>User</th><th>Role</th></tr>`;
+ usuarios.forEach(u=>html+=`<tr><td>${u.user}</td><td>${u.role}</td></tr>`);
+ html+=`</table>
+ <input id="nu" placeholder="Usuário">
+ <input id="np" placeholder="Senha">
+ <select id="nr"><option>admin</option><option>staff</option><option>cliente</option></select>
+ <button class="btn primary" onclick="addUsuario()">Agregar</button>
  </div>`;
  app.innerHTML=html;
 }
-function addStaff(){
- staff.push(s.value);localStorage.setItem('staff',JSON.stringify(staff));
- renderStaff();
+function addUsuario(){
+ usuarios.push({user:nu.value,pass:np.value,role:nr.value});
+ localStorage.setItem('usuarios',JSON.stringify(usuarios));
+ renderUsuarios();
 }
 
-/* ===== EXPORT ===== */
+/* ================= EXPORT ================= */
 function exportar(){
- let csv='Item,Categoria,Quantidade,Minimo\n';
- estoque.forEach(i=>csv+=`${i.nome},${i.cat},${i.qtd},${i.min}\n`);
+ let csv='Item,Categoria,Quantidade\n';
+ estoque.forEach(i=>csv+=`${i.nome},${i.cat},${i.qtd}\n`);
  let a=document.createElement('a');
  a.href=URL.createObjectURL(new Blob([csv]));
  a.download='inventario.csv';
  a.click();
 }
 
+/* ================= SAVE ================= */
 function save(){
  localStorage.setItem('estoque',JSON.stringify(estoque));
+ localStorage.setItem('pedidos',JSON.stringify(pedidos));
  localStorage.setItem('eventos',JSON.stringify(eventos));
 }
 </script>
 </body>
 </html>
+
 
 
